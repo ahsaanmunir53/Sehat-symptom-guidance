@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: sehat
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.6
+      # Powers the guidance. Without it the app still runs — emergency
+      # screening and the pharmacy table are code, not AI.
+      - key: GROQ_API_KEY
+        sync: false

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SEHAT — understand how you feel</title>
+<meta name="description" content="Describe your symptoms and get calm, plain-language guidance: what it could be, what helps, and when to see a doctor." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<header class="top">
+  <a class="logo" href="/"><span class="pulse"></span>SEHAT</a>
+  <span class="tag">Symptom guidance · not a doctor</span>
+</header>
+
+<main id="app">
+
+  <!-- ═══ INTRO ═══ -->
+  <section class="hero" id="hero">
+    <p class="eyebrow">Feeling unwell?</p>
+    <h1>Understand what your<br><em>body is telling you.</em></h1>
+    <p class="lede">
+      Describe how you feel in your own words. You'll get plain-language guidance —
+      what it could be, what helps, what to avoid, and when it's time to see a doctor.
+    </p>
+    <button class="cta" onclick="start()">Start — takes a minute</button>
+    <p class="micro">Free · nothing is stored · no account</p>
+  </section>
+
+  <!-- ═══ FORM ═══ -->
+  <form class="wizard hidden" id="wizard" onsubmit="submitForm(event)">
+
+    <div class="steps">
+      <span class="step on" data-s="1">About you</span>
+      <span class="step" data-s="2">Where</span>
+      <span class="step" data-s="3">Describe</span>
+    </div>
+
+    <!-- step 1 -->
+    <section class="card step-panel on" data-panel="1">
+      <h2>A little about you</h2>
+      <p class="sub">This changes what's likely and what's safe.</p>
+      <div class="grid2">
+        <label class="f"><span>Age</span>
+          <input type="number" id="age" min="1" max="119" placeholder="e.g. 28" required />
+        </label>
+        <label class="f"><span>Sex <i>optional</i></span>
+          <select id="sex">
+            <option value="">Prefer not to say</option>
+            <option>Female</option><option>Male</option>
+          </select>
+        </label>
+      </div>
+      <div class="f"><span>How long have you felt this way?</span>
+        <div class="chips" id="durations"></div>
+      </div>
+      <div class="f"><span>Any of these? <i>optional — changes what's safe</i></span>
+        <div class="chips" id="conds"></div>
+      </div>
+      <button type="button" class="next" onclick="go(2)">Continue</button>
+    </section>
+
+    <!-- step 2 -->
+    <section class="card step-panel" data-panel="2">
+      <h2>Where does it bother you?</h2>
+      <p class="sub">Tap anywhere that applies — or skip and just write it.</p>
+      <div class="body-row">
+        <svg viewBox="0 0 100 104" class="figure" id="figure" role="img" aria-label="Body map">
+          <defs>
+            <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#26E0B0" stop-opacity=".22"/>
+              <stop offset="100%" stop-color="#7C6CFF" stop-opacity=".16"/>
+            </linearGradient>
+          </defs>
+          <g fill="url(#skin)" stroke="rgba(190,220,255,.35)" stroke-width=".5">
+            <circle cx="50" cy="10" r="7.4"/>
+            <rect x="46.6" y="17.4" width="6.8" height="4.6" rx="2"/>
+            <path d="M38 23 h24 a7 7 0 0 1 7 7 v16 a6 6 0 0 1 -6 6 h-26 a6 6 0 0 1 -6 -6 v-16 a7 7 0 0 1 7 -7 z"/>
+            <rect x="27.5" y="25" width="8.4" height="26" rx="4.2"/>
+            <rect x="64.1" y="25" width="8.4" height="26" rx="4.2"/>
+            <rect x="40.5" y="52" width="8.6" height="38" rx="4.3"/>
+            <rect x="50.9" y="52" width="8.6" height="38" rx="4.3"/>
+          </g>
+          <g id="hotspots"></g>
+        </svg>
+        <div class="region-list" id="regionList"></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="back" onclick="go(1)">Back</button>
+        <button type="button" class="next" onclick="go(3)">Continue</button>
+      </div>
+    </section>
+
+    <!-- step 3 -->
+    <section class="card step-panel" data-panel="3">
+      <h2>Tell us in your own words</h2>
+      <p class="sub">The more detail, the more useful the guidance.</p>
+      <label class="f">
+        <textarea id="symptoms" rows="6" required
+          placeholder="e.g. Fever since Tuesday with a sore throat and dry cough. Worse at night, and I feel tired all day."></textarea>
+      </label>
+      <div class="err hidden" id="err"></div>
+      <div class="btn-row">
+        <button type="button" class="back" onclick="go(2)">Back</button>
+        <button class="next go" id="submitBtn">Get guidance</button>
+      </div>
+      <p class="micro center">Not a diagnosis. If you feel very unwell, see a doctor now.</p>
+    </section>
+  </form>
+
+  <!-- ═══ LOADING ═══ -->
+  <section class="loading hidden" id="loading">
+    <div class="rings"><span></span><span></span><span></span></div>
+    <p id="loadMsg">Reading what you wrote…</p>
+  </section>
+
+  <!-- ═══ RESULT ═══ -->
+  <section class="result hidden" id="result"></section>
+
+</main>
+
+<footer class="foot">
+  <p><strong>SEHAT is not a doctor and does not prescribe.</strong>
+     It gives general health information to help you decide what to do next.
+     Only an in-person examination can diagnose and treat.</p>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

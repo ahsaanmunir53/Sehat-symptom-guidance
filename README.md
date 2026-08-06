@@ -1,89 +1,121 @@
-# SEHAT — symptom guidance
+# SEHAT — Understand your symptoms. Then see your doctor.
 
-Describe how you feel in plain words. Get back what it could be, what helps,
-what to avoid, when to see a doctor, and what's available at the pharmacy counter.
+A doctor-style health consultation and first-aid web app for Pakistan. Runs on
+**Groq** (free tier) or **Anthropic Claude** — whichever key you provide.
 
-**Not a doctor. Does not prescribe. Shows no doses, ever.**
+SEHAT works the way a good physician works:
+
+1. **Basics first** — age, sex, and if pregnant, **exactly how many weeks** (this changes
+   what's safe, what's urgent, and what the possibilities even are).
+2. **History taking** — one focused question at a time (onset, severity, associated
+   symptoms, triggers, past history, medicines), like a real OPD consultation.
+3. **Assessment** — a clinical-summary "prescription pad": what the symptoms **may** be
+   (with honest likelihoods and reasoning), red flags, precautions, safe self-care,
+   over-the-counter options only, which specialist to see and how urgently, plus
+   questions to ask at the visit. Printable — literally made to take to your doctor.
+4. **Emergencies** — a deterministic safety screen runs **before and during** every
+   consultation. Unconsciousness, chest pain patterns, stroke signs, heavy bleeding,
+   accidents, seizures, snake bite, pregnancy emergencies (Roman Urdu included:
+   *behosh*, *saans nahi aa rahi*, *khoon ruk nahi raha*, *daura*) jump straight to
+   step-by-step first aid — what to do now, what never to do, and what to keep doing
+   **until you reach the hospital** — with one-tap calls to Rescue 1122 / Edhi 115.
+
+> **What SEHAT is not.** It is information and preparation — not a diagnosis, and not
+> a substitute for a qualified doctor. No AI (and no doctor, without examining you)
+> can promise a correct diagnosis from text alone. SEHAT's job is to make you an
+> informed patient and get you to the right doctor at the right speed.
 
 ---
 
-## Run it
+## Quick start
 
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
+```bash
+python -m venv venv
+venv\Scripts\activate          # Windows   (source venv/bin/activate on Linux/Mac)
 pip install -r requirements.txt
-uvicorn app:app --reload
+uvicorn main:app --reload
 ```
 
-Open **http://127.0.0.1:8000**
+Open http://127.0.0.1:8000
 
-To enable the AI guidance, create a file named `.env` — or just set it in your shell:
+Without an API key the app runs in **demo mode**: emergency screening, all 20 first-aid
+protocols and the medicine table are fully functional; the consultation asks a generic
+scripted history and returns a clearly-labelled demo summary.
+
+## Connect an AI provider
+
+SEHAT supports **Groq** (free tier, no credit card) and **Anthropic**. It auto-detects
+whichever key you set.
+
+**Groq (free) — recommended for testing:**
 
 ```powershell
-$env:GROQ_API_KEY="gsk_your_key_here"
-uvicorn app:app --reload
+$env:GROQ_API_KEY="gsk_..."          # get it from console.groq.com
+$env:MODEL="llama-3.3-70b-versatile" # optional, this is the default
+python run.py
 ```
 
-Free key at **console.groq.com**. Without it the app still runs: safety screening
-and the pharmacy table are plain Python, so nothing appears broken.
+**Anthropic (Claude Fable 5):**
 
-## Deploy
-
-Push to GitHub → Render → **New + → Blueprint** → pick the repo → paste
-`GROQ_API_KEY` → Apply. Single service, no build step for the frontend.
-
----
-
-## How safety is built
-
-The language model is the only untrusted part, and it sits **between two
-deterministic gates**:
-
-```
-validate → crisis screen → red-flag screen → [ MODEL ] → drug scrub → curated pharmacy table
+```powershell
+$env:ANTHROPIC_API_KEY="sk-ant-..."
+$env:MODEL="claude-fable-5"
+python run.py
 ```
 
-**1. Emergency screening runs before the model is ever called.**
-Chest pain, stroke signs, breathing difficulty, severe bleeding and a dozen other
-patterns return "get help now" from plain regex. A language model never gets a
-vote on whether a heart attack is urgent.
+**Or use a config file:** copy `data/config.example.json` to `data/config.json` and paste
+your key there. That file is gitignored — never commit it.
 
-**2. The model is forbidden from naming any medicine**, and a regex strips drug
-names and doses from its output anyway. Prompts can be jailbroken; the filter cannot.
+Free Groq models worth trying: `llama-3.3-70b-versatile` (best reasoning),
+`llama-3.1-8b-instant` (fastest, highest daily limit), `qwen/qwen3-32b`.
+Anthropic models: `claude-fable-5`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`.
 
-**3. Medicine guidance is a hand-written table** (`otc.py`), not model output.
-The model may only choose a *category key* from a closed list of seven. Anything
-outside that list is dropped. This exists because:
+> Note on quality: the safety layers (emergency detection, dose guard, OTC allow-list,
+> pregnancy filtering) are deterministic Python and work identically on any provider.
+> The model only affects the *quality of the clinical reasoning* — Claude reasons better
+> on complex cases, Groq is free and fast. Both are safe to run.
 
-- Antibiotics are sold over the counter in Pakistan — a model that suggests them
-  drives resistance and treats viral illness with something useless.
-- Paracetamol overdose is a leading cause of acute liver failure.
-- Ibuprofen is unsafe in late pregnancy, kidney disease, and with several common
-  blood-pressure medicines.
+## Deploy on Render
 
-**4. No dose appears anywhere**, by design. Dose depends on weight, age, kidney
-and liver function, pregnancy and interactions. Every entry routes to a
-pharmacist — free, no appointment, legally able to advise.
+Push to GitHub, then **New → Blueprint** and point it at this repo — `render.yaml`
+does the rest (Singapore region, free plan). Add `GROQ_API_KEY` (or `ANTHROPIC_API_KEY`) in the
+environment settings when prompted. Free tier sleeps when idle; the first request
+after a sleep takes ~30–50 s.
 
-**5. Self-harm language routes to crisis support**, not triage, with real
-Pakistani helplines.
+## Tests
 
----
+```bash
+python test_app.py
+```
 
-## API
+30 offline checks: pregnancy-weeks validation, English + Roman Urdu emergency
+triggers, typo tolerance ("chst pian"), negation ("no chest pain" must NOT trigger,
+"don't mind… speech slurred" MUST), pregnancy-aware red flags gated by gestational
+week, crisis routing, prescription-dose guard, OTC pregnancy filtering, the full
+demo consultation, and the output scrubber.
 
-| Method | Route | |
-|---|---|---|
-| `GET` | `/api/health` | is the service up, is AI enabled |
-| `POST` | `/api/triage` | `{age, sex, duration, symptoms, conditions[]}` |
-| `GET` | `/api/docs` | interactive OpenAPI docs |
+## Safety architecture (defense in depth)
 
-Response bands: `emergency` · `crisis` · `guidance`.
+| Layer | What it does |
+|---|---|
+| Emergency screen | Deterministic, runs on the complaint **and every message** — before any AI call. Fuzzy-matched, negation-aware, EN + Roman Urdu. |
+| Pregnancy gating | Weeks are required at intake. Reduced-movement triggers activate ≥26 weeks; preeclampsia signs ≥20 weeks. Pregnancy-unsafe OTC medicines are filtered out server-side. |
+| Crisis routing | Self-harm language routes to Umang (0311-7786264, 24/7, free) and 1122 — never to a symptom flow. |
+| Dose guard | Questions about prescription-medicine doses (sedatives, antibiotics, opioids, abortion medicines) are refused and routed to a doctor/pharmacist. |
+| OTC allow-list | The AI may only suggest 7 curated over-the-counter items; anything else it names is stripped server-side and its curated label-dose text is substituted. |
+| Output scrubber | Any prescription drug + dose pattern in AI output is replaced with "(dose: ask your doctor)". |
+| Framing | Every assessment carries the disclaimer and a specific route to a real doctor. |
 
----
+## Project layout
 
-## Stack
-
-FastAPI + vanilla JS frontend. No build step deliberately — no node_modules,
-no bundler, nothing to break on deploy. Deploys as one service in about a minute.
+```
+main.py        FastAPI app + validation (pregnancy_weeks required when pregnant)
+consult.py     consultation engine: sessions, JSON contract, demo mode, post-processing
+prompts.py     the "doctor brain" system prompt + assessment schema
+llm.py         LLM client - Groq (free) or Anthropic, auto-detected
+safety.py      emergency/crisis screens, dose guard, scrubber
+firstaid.py    20 step-by-step protocols incl. "until you reach the hospital"
+otc.py         curated OTC table with pregnancy flags
+static/        frontend (vanilla JS single-page app)
+test_app.py    offline test suite
+```

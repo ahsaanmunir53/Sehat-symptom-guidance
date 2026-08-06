@@ -1,136 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SEHAT — understand how you feel</title>
-<meta name="description" content="Describe your symptoms and get calm, plain-language guidance: what it could be, what helps, and when to see a doctor." />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEHAT — Understand your symptoms. Then see your doctor.</title>
+<meta name="description" content="SEHAT takes your history like a doctor, explains what your symptoms may mean, and guides you through emergencies until you reach a hospital.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
-<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
-
-<header class="top">
-  <a class="logo" href="/"><span class="pulse"></span>SEHAT</a>
-  <span class="tag">Symptom guidance · not a doctor</span>
+<header class="topbar">
+  <a class="brand" href="#" data-nav="home">
+    <span class="brand-mark">✚</span>
+    <span class="brand-name">SEHAT</span>
+    <span class="brand-tag">clinic in your pocket</span>
+  </a>
+  <nav class="nav">
+    <button class="nav-link" data-nav="consult">Consultation</button>
+    <button class="nav-link" data-nav="firstaid">First aid</button>
+    <button class="nav-link nav-emergency" data-nav="firstaid">Emergency</button>
+  </nav>
 </header>
+
+<div id="demo-banner" class="demo-banner hidden">
+  Demo mode — the AI doctor engine is not connected. Emergency guidance, first aid and the
+  medicine table work fully. Add your Anthropic API key (Claude Fable&nbsp;5) to unlock full
+  consultations — see the README.
+</div>
 
 <main id="app">
 
-  <!-- ═══ INTRO ═══ -->
-  <section class="hero" id="hero">
-    <p class="eyebrow">Feeling unwell?</p>
-    <h1>Understand what your<br><em>body is telling you.</em></h1>
-    <p class="lede">
-      Describe how you feel in your own words. You'll get plain-language guidance —
-      what it could be, what helps, what to avoid, and when it's time to see a doctor.
-    </p>
-    <button class="cta" onclick="start()">Start — takes a minute</button>
-    <p class="micro">Free · nothing is stored · no account</p>
-  </section>
+  <!-- ============================ HOME ============================ -->
+  <section id="view-home" class="view">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">صحت · A doctor-style consultation, in plain language</p>
+        <h1>Understand your symptoms.<br><em>Then see your doctor.</em></h1>
+        <p class="lede">SEHAT takes your history the way a doctor does — one focused question
+        at a time — then explains what your symptoms <strong>may</strong> mean, what to watch for,
+        and exactly which doctor to see. In an emergency, it walks you step by step
+        until you reach a hospital.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" data-nav="consult">Start a consultation</button>
+          <button class="btn btn-danger" data-nav="firstaid">Emergency &amp; first aid</button>
+        </div>
+        <ul class="trust">
+          <li>History first, like a real doctor — including pregnancy weeks</li>
+          <li>Possibilities with honest likelihoods, never fake certainty</li>
+          <li>Step-by-step first aid, until you reach the hospital</li>
+        </ul>
+      </div>
 
-  <!-- ═══ FORM ═══ -->
-  <form class="wizard hidden" id="wizard" onsubmit="submitForm(event)">
-
-    <div class="steps">
-      <span class="step on" data-s="1">About you</span>
-      <span class="step" data-s="2">Where</span>
-      <span class="step" data-s="3">Describe</span>
+      <aside class="hero-pad" aria-hidden="true">
+        <div class="pad">
+          <div class="pad-head">
+            <div class="pad-title">SEHAT <span>· clinical summary</span></div>
+            <div class="pad-sub">Female, 29 · Pregnant — 32 weeks (third trimester)</div>
+          </div>
+          <div class="pad-line"><b>Most likely</b> — Pregnancy reflux (heartburn)</div>
+          <div class="pad-line"><b>Possible</b> — Gallbladder irritation</div>
+          <div class="pad-line pad-rx">℞ &nbsp;Antacid (Gaviscon) — after meals &amp; bedtime</div>
+          <div class="pad-line pad-red">Go now if: pain becomes severe, vision blurs, or bleeding starts</div>
+          <div class="pad-tear">✂ bring this to your doctor — Gynaecologist, within 3 days</div>
+        </div>
+      </aside>
     </div>
 
-    <!-- step 1 -->
-    <section class="card step-panel on" data-panel="1">
-      <h2>A little about you</h2>
-      <p class="sub">This changes what's likely and what's safe.</p>
-      <div class="grid2">
-        <label class="f"><span>Age</span>
-          <input type="number" id="age" min="1" max="119" placeholder="e.g. 28" required />
-        </label>
-        <label class="f"><span>Sex <i>optional</i></span>
-          <select id="sex">
-            <option value="">Prefer not to say</option>
-            <option>Female</option><option>Male</option>
-          </select>
-        </label>
-      </div>
-      <div class="f"><span>How long have you felt this way?</span>
-        <div class="chips" id="durations"></div>
-      </div>
-      <div class="f"><span>Any of these? <i>optional — changes what's safe</i></span>
-        <div class="chips" id="conds"></div>
-      </div>
-      <button type="button" class="next" onclick="go(2)">Continue</button>
-    </section>
-
-    <!-- step 2 -->
-    <section class="card step-panel" data-panel="2">
-      <h2>Where does it bother you?</h2>
-      <p class="sub">Tap anywhere that applies — or skip and just write it.</p>
-      <div class="body-row">
-        <svg viewBox="0 0 100 104" class="figure" id="figure" role="img" aria-label="Body map">
-          <defs>
-            <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#26E0B0" stop-opacity=".22"/>
-              <stop offset="100%" stop-color="#7C6CFF" stop-opacity=".16"/>
-            </linearGradient>
-          </defs>
-          <g fill="url(#skin)" stroke="rgba(190,220,255,.35)" stroke-width=".5">
-            <circle cx="50" cy="10" r="7.4"/>
-            <rect x="46.6" y="17.4" width="6.8" height="4.6" rx="2"/>
-            <path d="M38 23 h24 a7 7 0 0 1 7 7 v16 a6 6 0 0 1 -6 6 h-26 a6 6 0 0 1 -6 -6 v-16 a7 7 0 0 1 7 -7 z"/>
-            <rect x="27.5" y="25" width="8.4" height="26" rx="4.2"/>
-            <rect x="64.1" y="25" width="8.4" height="26" rx="4.2"/>
-            <rect x="40.5" y="52" width="8.6" height="38" rx="4.3"/>
-            <rect x="50.9" y="52" width="8.6" height="38" rx="4.3"/>
-          </g>
-          <g id="hotspots"></g>
-        </svg>
-        <div class="region-list" id="regionList"></div>
-      </div>
-      <div class="btn-row">
-        <button type="button" class="back" onclick="go(1)">Back</button>
-        <button type="button" class="next" onclick="go(3)">Continue</button>
-      </div>
-    </section>
-
-    <!-- step 3 -->
-    <section class="card step-panel" data-panel="3">
-      <h2>Tell us in your own words</h2>
-      <p class="sub">The more detail, the more useful the guidance.</p>
-      <label class="f">
-        <textarea id="symptoms" rows="6" required
-          placeholder="e.g. Fever since Tuesday with a sore throat and dry cough. Worse at night, and I feel tired all day."></textarea>
-      </label>
-      <div class="err hidden" id="err"></div>
-      <div class="btn-row">
-        <button type="button" class="back" onclick="go(2)">Back</button>
-        <button class="next go" id="submitBtn">Get guidance</button>
-      </div>
-      <p class="micro center">Not a diagnosis. If you feel very unwell, see a doctor now.</p>
-    </section>
-  </form>
-
-  <!-- ═══ LOADING ═══ -->
-  <section class="loading hidden" id="loading">
-    <div class="rings"><span></span><span></span><span></span></div>
-    <p id="loadMsg">Reading what you wrote…</p>
+    <div class="notice">
+      <b>What SEHAT is — and isn't.</b> SEHAT is for understanding and preparation. It is not a
+      medical diagnosis and no app can be. Treatment decisions belong with a qualified doctor
+      who can examine you. In any emergency, call <a href="tel:1122">1122</a> (Rescue) or
+      <a href="tel:115">115</a> (Edhi) first.
+    </div>
   </section>
 
-  <!-- ═══ RESULT ═══ -->
-  <section class="result hidden" id="result"></section>
+  <!-- ========================== CONSULT =========================== -->
+  <section id="view-consult" class="view hidden">
+    <div class="consult-wrap">
+
+      <div id="intake" class="card intake">
+        <h2>Before we begin</h2>
+        <p class="muted">A doctor always starts with the basics — they change everything that follows.</p>
+
+        <form id="intake-form" autocomplete="off">
+          <div class="grid2">
+            <label>Age
+              <input type="number" id="f-age" min="0" max="120" required placeholder="e.g. 29">
+            </label>
+            <label>Sex
+              <div class="seg" id="f-sex">
+                <button type="button" data-val="female">Female</button>
+                <button type="button" data-val="male">Male</button>
+              </div>
+            </label>
+          </div>
+
+          <div id="preg-row" class="preg-row hidden">
+            <label class="check">
+              <input type="checkbox" id="f-pregnant"> Currently pregnant
+            </label>
+            <div id="preg-weeks" class="preg-weeks hidden">
+              <label>How many weeks along?
+                <input type="number" id="f-weeks" min="1" max="45" placeholder="e.g. 32">
+              </label>
+              <span id="trimester-chip" class="chip hidden"></span>
+            </div>
+          </div>
+
+          <label>What's the main problem? <span class="muted">(English ya Roman Urdu — jaise aap bolte hain)</span>
+            <textarea id="f-complaint" rows="3" required
+              placeholder="e.g. Two days se pait ke right side mein dard hai, khanay ke baad barh jata hai…"></textarea>
+          </label>
+
+          <div class="grid2">
+            <label>Since when?
+              <select id="f-duration">
+                <option value="">Select…</option>
+                <option>Started today</option>
+                <option>1–3 days</option>
+                <option>About a week</option>
+                <option>2–4 weeks</option>
+                <option>More than a month</option>
+              </select>
+            </label>
+            <label>Known conditions / regular medicines <span class="muted">(optional)</span>
+              <input type="text" id="f-conditions" placeholder="e.g. diabetes, BP tablet">
+            </label>
+          </div>
+
+          <p id="intake-error" class="form-error hidden"></p>
+          <button class="btn btn-primary btn-wide" type="submit" id="start-btn">Begin consultation</button>
+          <p class="tiny muted">Information only — not a diagnosis. Emergencies: call 1122 first.</p>
+        </form>
+      </div>
+
+      <div id="chat" class="chat hidden" aria-live="polite"></div>
+
+      <div id="composer" class="composer hidden">
+        <div id="quick-options" class="quick-options"></div>
+        <form id="answer-form">
+          <input type="text" id="answer-input" placeholder="Type your answer…" autocomplete="off" maxlength="2000">
+          <button class="btn btn-primary" type="submit">Send</button>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================== FIRST AID ========================= -->
+  <section id="view-firstaid" class="view hidden">
+    <div class="fa-head">
+      <div>
+        <h2>Emergency &amp; first aid</h2>
+        <p class="muted">What to do right now, what never to do, and what to keep doing until you reach the hospital.</p>
+      </div>
+      <a class="btn btn-danger btn-call" href="tel:1122">📞 Call 1122 — Rescue</a>
+    </div>
+    <input type="search" id="fa-search" class="fa-search" placeholder="Search: unconscious, bleeding, burn, saanp, fracture…">
+    <div id="fa-grid" class="fa-grid"><p class="muted">Loading first-aid protocols…</p></div>
+    <div id="fa-detail" class="hidden"></div>
+  </section>
 
 </main>
 
-<footer class="foot">
-  <p><strong>SEHAT is not a doctor and does not prescribe.</strong>
-     It gives general health information to help you decide what to do next.
-     Only an in-person examination can diagnose and treat.</p>
+<button id="fab" class="fab" data-nav="firstaid" title="Emergency & first aid">
+  <span class="fab-plus">✚</span> EMERGENCY
+</button>
+
+<footer class="footer">
+  <div>
+    <b>SEHAT</b> — health information &amp; first aid for Pakistan.
+    Not a medical diagnosis; not a substitute for a qualified doctor.
+  </div>
+  <div class="footer-nums">
+    Rescue <a href="tel:1122">1122</a> · Edhi <a href="tel:115">115</a> ·
+    Umang mental-health helpline <a href="tel:03117786264">0311-7786264</a>
+  </div>
 </footer>
 
-<script src="/app.js"></script>
+<script src="/static/app.js"></script>
 </body>
 </html>

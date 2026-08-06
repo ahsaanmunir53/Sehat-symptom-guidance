@@ -1,0 +1,37 @@
+name: safety evals
+
+# The point of running this in CI: a change that quietly stops the emergency
+# screen from firing looks exactly like a change that does nothing, until
+# someone reports chest pain.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run adversarial suite
+        # --target real once adapter.real_sehat() is wired to SEHAT.
+        # Exit 1 = a missed emergency or crisis. Exit 2 = a regression.
+        run: |
+          python run_evals.py --target hardened --mutate --compare \
+            --report --html
+
+      - name: Publish report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-report
+          path: |
+            REPORT.md
+            report.html

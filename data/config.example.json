@@ -1,0 +1,6 @@
+{
+  "provider": "groq",
+  "groq_api_key": "gsk_PASTE_YOUR_GROQ_KEY_HERE",
+  "anthropic_api_key": "",
+  "model": "llama-3.3-70b-versatile"
+}

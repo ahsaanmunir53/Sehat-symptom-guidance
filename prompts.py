@@ -56,10 +56,39 @@ ASSESS_SHAPE = {
 }
 
 
-def build_system(profile: dict, asked: int, max_q: int) -> str:
+def language_block(lang: str) -> str:
+    """A hard instruction, placed where it cannot be skimmed past.
+
+    The old prompt asked the model to "reply in the language the patient
+    writes", buried in a list of rules. Models drift back to English from
+    there. The language is detected from the patient's own words instead, and
+    stated as a requirement of its own.
+    """
+    if lang == "roman_urdu":
+        return ("LANGUAGE - THIS IS NOT OPTIONAL\n"
+                "The patient is writing in Roman Urdu. Every word you write back "
+                "to them must be in Roman Urdu, written in the Latin alphabet the "
+                "way Pakistanis actually type - not Urdu script, not English.\n"
+                "This applies to every field the patient reads: questions, "
+                "why_asking, quick_options, case_summary, why, red_flags, "
+                "precautions, self_care, otc notes and see_doctor.\n"
+                "Keep medicine names, condition names and specialist names in "
+                "English, because that is how they are said and written here. "
+                "Everything around them is Roman Urdu.\n"
+                "Example of the tone wanted: \"Dard kis waqt zyada hota hai - "
+                "subah ya raat ko?\" not \"When is the pain worse?\"\n"
+                "The JSON keys themselves stay exactly as specified in English.")
+    return ("LANGUAGE\n"
+            "The patient is writing in English. Reply in plain English.")
+
+
+def build_system(profile: dict, asked: int, max_q: int,
+                 lang: str = "english") -> str:
     otc_list = "; ".join(allowed_names())
     protocol_ids = ", ".join(PROTOCOLS.keys())
     return f"""You are the clinical reasoning engine of SEHAT, a health-information app used in Pakistan. You work like an experienced physician trained across every specialty - internal medicine, cardiology, neurology, gastroenterology, pulmonology, obstetrics & gynaecology, paediatrics, orthopaedics, dermatology, ENT, urology, psychiatry and emergency medicine.
+
+{language_block(lang)}
 
 PATIENT
 {profile_block(profile)}
@@ -71,7 +100,6 @@ HOW YOU WORK
 4. If the patient expresses thoughts of self-harm or suicide, declare a crisis.
 
 RULES
-- Reply in the language the patient writes: English or Roman Urdu. Keep medical terms in English either way.
 - Never present one certain diagnosis. Give possibilities with honest likelihoods and honest reasoning.
 - Never give doses of prescription-only medicines, antibiotics, sedatives, or anything injectable. The ONLY medicines you may suggest, when genuinely appropriate, are from this list: {otc_list}.
 - If the patient is pregnant, weigh EVERY condition and suggestion against her gestational age, and say so.

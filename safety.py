@@ -363,3 +363,65 @@ def scrub_deep(obj):
     if isinstance(obj, dict):
         return {k: scrub_deep(v) for k, v in obj.items()}
     return obj
+
+
+# ----------------------------------------------------------------- language
+
+# Function words, not medical words. People mix English symptom terms into
+# Roman Urdu constantly — "gala ma pain ha", "flu sa feel ho raha" — so keying
+# off "pain" or "fever" would read those as English. Grammar gives the language
+# away, because grammar words are the ones that never get swapped out.
+#
+# Split into strong and weak on purpose. "to", "main", "par" and "or" are
+# ordinary English words as well as Urdu ones, and counting them freely made
+# "i dont want to live anymore" look like Urdu. They only count as support
+# once something unambiguous has already been seen.
+_URDU_STRONG = {
+    "hai", "hain", "hy", "hei", "hoon", "hun", "tha", "thi", "thay",
+    "raha", "rahi", "rha", "rhi", "rahe", "hota", "hoti", "hogaya",
+    "mujhe", "muje", "mujhy", "mera", "meri", "mere", "aap", "tum",
+    "uska", "uski", "apne", "apna", "apni", "humein", "kya", "kia",
+    "kyun", "kiun", "nahi", "nai", "bhi", "lekin", "magar", "agar",
+    "phir", "abhi", "kuch", "koi", "bohat", "bhut", "bahut", "boht",
+    "zyada", "ziada", "thora", "zara", "halka", "acha", "theek", "thik",
+    "jab", "kaise", "kahan", "kitna", "kitni", "wala", "wali",
+}
+
+# Only counted when a strong marker is already present.
+_URDU_WEAK = {"ka", "ki", "ko", "se", "sa", "si", "ha", "ma", "main", "mein",
+              "or", "aur", "to", "par", "pe", "ab", "b", "na", "ya", "hum",
+              "sab", "kam", "gaya", "gayi", "bura", "buri"}
+
+# Urdu even when everything around them is English.
+_URDU_CONTENT = {
+    "dard", "bukhar", "bukhaar", "gala", "pait", "peit", "sar", "sir", "chakkar",
+    "kamzori", "khansi", "ulti", "qabz", "saans", "jism", "hath", "pao", "paon",
+    "aankh", "kaan", "seena", "seene", "dawai", "dawa", "goli", "tabiyat",
+    "beemar", "bimar", "bemari", "khaana", "khana", "neend", "khoon",
+}
+
+
+def detect_language(text: str) -> str:
+    """Return "roman_urdu" or "english" for a patient's own words.
+
+    Leans towards Roman Urdu on genuine ambiguity: answering an Urdu speaker
+    in English is a real failure, while a stray Urdu word in an English
+    sentence costs almost nothing.
+    """
+    tokens = normalize(text).split()
+    if not tokens:
+        return "english"
+
+    if any(t in _URDU_CONTENT for t in tokens):
+        return "roman_urdu"
+
+    strong = sum(1 for t in tokens if t in _URDU_STRONG)
+    if strong >= 2:
+        return "roman_urdu"
+    if strong == 1:
+        # One clear marker plus supporting particles, or a very short message
+        # where one marker is most of the sentence.
+        weak = sum(1 for t in tokens if t in _URDU_WEAK)
+        if weak >= 1 or len(tokens) <= 4:
+            return "roman_urdu"
+    return "english"

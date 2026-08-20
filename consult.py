@@ -54,7 +54,27 @@ def _emergency_payload(rule: dict) -> dict:
     }
 
 
-def _crisis_payload() -> dict:
+def _crisis_payload(lang: str = "english") -> dict:
+    """These words never pass through the model, so they are written twice.
+
+    This is the one screen where the language matters most: somebody reaching
+    out in Roman Urdu should not be answered in a language they did not choose.
+    """
+    if lang == "roman_urdu":
+        return {
+            "type": "crisis",
+            "message": ("Jo aap is waqt utha rahe hain woh bohat bhaari hai, aur "
+                        "yeh sab akele uthana zaroori nahi. Kisi aise insaan se "
+                        "baat kar lein jo is waqt aap ke saath ho sake - koi apna, "
+                        "ya neeche di gayi trained counsellors ki team. Woh muft "
+                        "sunte hain, kisi bhi waqt, aur aap apna naam batae baghair "
+                        "baat kar sakte hain."),
+            "helplines": [
+                {"name": "Umang - 24/7 mental health helpline (muft)", "number": "0311-7786264"},
+                {"name": "Rescue (agar kisi ki jaan ko foran khatra hai)", "number": "1122"},
+            ],
+            "note": "Agar aap ne pehle hi kuch kha liya hai ya khud ko nuqsan pohanchaya hai, foran qareeb tareen hospital ke emergency mein jaein.",
+        }
     return {
         "type": "crisis",
         "message": ("What you're carrying right now sounds really heavy, and you "
@@ -230,7 +250,8 @@ def _clean_assessment(a: dict, profile: dict) -> dict:
 
 def _llm_turn(sess: dict, force_assess: bool = False) -> dict:
     profile = sess["profile"]
-    system = prompts.build_system(profile, sess["asked"], MAX_QUESTIONS)
+    system = prompts.build_system(profile, sess["asked"], MAX_QUESTIONS,
+                                  sess.get("lang", "english"))
     if sess["stage"] == "followup":
         system += prompts.FOLLOWUP_SUFFIX
     messages = list(sess["messages"])
@@ -264,7 +285,7 @@ def _dispatch(sess: dict, obj: dict) -> dict:
         return _emergency_payload(rule)
     if action == "crisis":
         sess["stage"] = "crisis"
-        return _crisis_payload()
+        return _crisis_payload(sess.get("lang", "english"))
     if action == "assess":
         sess["stage"] = "followup"
         assessment = _clean_assessment(obj.get("assessment") or {}, sess["profile"])
@@ -290,7 +311,7 @@ def start(profile: dict) -> dict:
     complaint = profile["complaint"]
 
     if safety.screen_crisis(complaint):
-        return _crisis_payload()
+        return _crisis_payload(safety.detect_language(complaint))
     rule = safety.screen_emergency(complaint, profile)
     if rule:
         return _emergency_payload(rule)
@@ -303,6 +324,9 @@ def start(profile: dict) -> dict:
                                  + (f" (since: {profile['duration']})" if profile.get("duration") else "")}],
         "asked": 0,
         "stage": "history",
+        # Decided once, from the complaint, and kept for the whole
+        # consultation so the app does not switch languages mid-conversation.
+        "lang": safety.detect_language(complaint),
         "touched": time.time(),
         "demo": not config()["configured"],
     }
@@ -339,7 +363,12 @@ def answer(session_id: str, text: str) -> dict:
     # deterministic screens on every patient message
     if safety.screen_crisis(text):
         sess["stage"] = "crisis"
-        return _crisis_payload()
+        # Read this message too: someone may have started in English and
+        # switched to Urdu for the thing that is hardest to say.
+        lang = safety.detect_language(text)
+        if lang == "english":
+            lang = sess.get("lang", "english")
+        return _crisis_payload(lang)
     rule = safety.screen_emergency(text, sess["profile"])
     if rule:
         sess["stage"] = "emergency"

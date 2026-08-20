@@ -315,7 +315,16 @@ def start(profile: dict) -> dict:
                 "progress": {"asked": 1, "max": len(_DEMO_QUESTIONS)},
                 "session_id": sess["id"], "demo": True}
 
-    obj = _llm_turn(sess)
+    # answer() already guarded this; start() did not, so a failing model
+    # escaped as a 500 with no readable body and the page could only say
+    # "Something went wrong" — hiding the actual cause from everyone.
+    try:
+        obj = _llm_turn(sess)
+    except LLMError as exc:
+        return {"type": "error", "message": str(exc), "session_id": sess["id"]}
+    except ValueError:
+        return {"type": "error", "session_id": sess["id"],
+                "message": "The AI reply couldn't be read. Please try again."}
     return _dispatch(sess, obj)
 
 

@@ -246,12 +246,42 @@ def screen_emergency(text: str, profile: dict | None = None):
 
 # ----------------------------------------------------------------- crisis
 
-_CRISIS = ["kill myself", "end my life", "ending my life", "suicide",
-           "suicidal", "want to die", "i want to die", "dont want to live",
-           "do not want to live", "better off dead", "khudkushi",
-           "marna chahta", "marna chahti", "jeena nahi chahta",
-           "jeena nahi chahti", "hurt myself", "harm myself", "cut myself",
-           "cutting myself", "apne aap ko nuksan"]
+# The form invites Roman Urdu — "English ya Roman Urdu, jaise aap bolte hain" —
+# so the Roman Urdu side of this list has to be as thorough as the English one.
+# A miss here routes someone in crisis into a symptom questionnaire instead of
+# a helpline, so phrases are added generously. Showing crisis support to
+# someone who did not need it costs almost nothing; the opposite does not.
+#
+# Single ambiguous words are deliberately absent. "khatam" alone is "finished"
+# (dawai khatam ho gayi) and "maut" alone appears in ordinary fear-of-illness
+# talk, so both only count inside a longer phrase.
+_CRISIS = [
+    # English
+    "kill myself", "killing myself", "end my life", "ending my life",
+    "end it all", "take my own life", "taking my own life", "suicide",
+    "suicidal", "want to die", "i want to die", "wish i was dead",
+    "wish i were dead", "dont want to live", "do not want to live",
+    "no reason to live", "nothing to live for", "dont want to be here",
+    "better off dead", "hurt myself", "harm myself", "self harm",
+    "cut myself", "cutting myself", "overdose on",
+
+    # Roman Urdu - ending one's life
+    "khudkushi", "khud kushi", "khudkhushi", "khud khushi",
+    "marna chahta", "marna chahti", "mar jana chahta", "mar jana chahti",
+    "mar jaon", "mar jaun", "mar jaunga", "mar jaungi",
+    "khud ko khatam", "apne aap ko khatam", "zindagi khatam",
+    "khud ko maar", "khud ko marna", "apni jaan lena", "apni jaan le",
+    "jaan de dun", "jaan dena chahta", "jaan dena chahti",
+
+    # Roman Urdu - not wanting to live
+    "jeena nahi chahta", "jeena nahi chahti", "ab nahi jeena",
+    "jeene ka dil nahi", "jeene ko dil nahi", "zinda nahi rehna",
+    "zindagi se tang", "jeene ka maza nahi",
+
+    # Roman Urdu - method words, which signal intent on their own
+    "zeher kha", "zeher pi", "phansi laga", "nas kaat", "nasein kaat",
+    "goliyan kha lun", "apne aap ko nuksan", "khud ko nuksan",
+]
 
 
 def screen_crisis(text: str) -> bool:

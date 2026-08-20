@@ -7,7 +7,10 @@ SEHAT test suite - runs fully offline in demo mode (no API key needed).
 import os
 
 for _k in ("ANTHROPIC_API_KEY", "GROQ_API_KEY", "LLM_PROVIDER", "MODEL"):
-    os.environ.pop(_k, None)  # force demo mode for tests
+    os.environ.pop(_k, None)
+# Clearing the environment is not enough on its own: data/config.json can also
+# supply a key. This says plainly that the suite must not call out.
+os.environ["SEHAT_FORCE_DEMO"] = "1"
 
 from fastapi.testclient import TestClient  # noqa: E402
 

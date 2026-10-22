@@ -11,3 +11,19 @@ services:
         sync: false
       - key: MODEL
         value: openai/gpt-oss-20b
+
+  # The website on its own (static site: never sleeps, opens at once). It calls the API above, and
+  # shows a bar with a seconds count while the API wakes up. The API keeps serving the website at
+  # its old address too, so existing links still work.
+  - type: web
+    name: sehat-web
+    runtime: static
+    buildCommand: >-
+      mkdir -p site/static && cp -r static/. site/static/ && cp static/index.html site/index.html &&
+      printf 'window.API_URL = "%s";\n' "$API_URL" > site/static/config.js
+    staticPublishPath: site
+    envVars:
+      # The API's address. Change it if Render gave the API a different URL.
+      - key: API_URL
+        value: https://sehat-g2f6.onrender.com
+

@@ -7,6 +7,7 @@ Deploy:   see render.yaml / README.md
 
 from pathlib import Path
 
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +19,11 @@ import otc
 from llm import config
 
 app = FastAPI(title="SEHAT", version="2.0")
+
+# The website may be served from a separate static site (it never sleeps on Render's free plan),
+# so the API answers browsers from other origins. No cookies are used, so this is safe.
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PATCH", "DELETE"],
+                   allow_headers=["*"])
 
 STATIC = Path(__file__).parent / "static"
 

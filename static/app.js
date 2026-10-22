@@ -10,7 +10,7 @@
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
   const api = async (path, opts) => {
-    const res = await fetch(path, opts);
+    const res = await fetch((window.API_URL || "") + path, opts);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       const msg = data && data.detail
